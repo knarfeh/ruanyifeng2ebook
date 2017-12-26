@@ -1,0 +1,25 @@
+version: '2'
+services:
+  ruanyifengeebook:
+    image: knarfeh/ruanyifengeebook
+    build:
+      context: .
+      dockerfile: ./.docker/dev/Dockerfile
+    # entrypoint: [sh]
+    command: ["go", "run", "main.go", "fetch"]
+    tty: true
+    volumes:
+      - .:/go/src/github.com/ee-book/ruanyifengeebook/
+    environment:
+      - URL=http://www.aaronsw.com/weblog/fullarchive
+      - DAY_TIME_STAMP=2017-12-22
+      - ES_HOST_PORT=http://elasticsearch:9200
+      # - ES_HOST_PORT=http://192.168.199.121:9200
+      # - no_proxy=true
+    networks:
+      - default
+
+networks:
+  default:
+    external:
+      name: githubissueseebook_githubissueseebook
