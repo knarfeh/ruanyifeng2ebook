@@ -11,8 +11,8 @@ services:
     volumes:
       - .:/go/src/github.com/ee-book/ruanyifengeebook/
     environment:
-      - URL=http://www.aaronsw.com/weblog/fullarchive
-      - DAY_TIME_STAMP=2017-12-22
+      - URL=http://www.ruanyifeng.com/blog/computer/
+      - DAY_TIME_STAMP=2017-12-29
       - ES_HOST_PORT=http://elasticsearch:9200
       # - ES_HOST_PORT=http://192.168.199.121:9200
       # - no_proxy=true

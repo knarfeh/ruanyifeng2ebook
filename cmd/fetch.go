@@ -15,7 +15,7 @@
 package cmd
 
 import (
-	"context"
+	// "context"
 	"fmt"
 	"log"
 	"sync"
@@ -59,8 +59,8 @@ func init() {
 func main() {
 	fmt.Println("ruanyifengeebook running...")
 	URL := viper.GetString("URL")
-	DAYTIMESTAMP := viper.GetString("DAY_TIME_STAMP")
-	viper.SetDefault("ROUTINE_NUM", 30)
+	// DAYTIMESTAMP := viper.GetString("DAY_TIME_STAMP")
+	viper.SetDefault("ROUTINE_NUM", 10)
 	ROUTINENUM := viper.GetInt("ROUTINE_NUM")
 	var (
 		maxRoutineNum = ROUTINENUM
@@ -74,7 +74,7 @@ func main() {
 		panic(err)
 	}
 	defer esClient.Stop()
-	bulkRequest := esClient.Bulk()
+	_ = esClient.Bulk()
 
 	type esDoc struct {
 		Title        string `json:"title"`
@@ -88,58 +88,35 @@ func main() {
 		fmt.Println("Network issues...")
 		log.Fatal(err)
 	}
+	fmt.Println("doc???", doc)
 
 	ch := make(chan int, maxRoutineNum)
-
 	documents := make([]*goquery.Document, 500)
-	doc.Find(".content p").Each(func(i int, s *goquery.Selection) {
+	doc.Find(".module-list-item").Each(func(i int, s *goquery.Selection) {
 		title := s.Find("a").Text()
 		href, _ := s.Find("a").Attr("href")
-		articleHref := "http://www.aaronsw.com/weblog/" + href
-		log.Printf("title %d: %s, href: %s\n", i, title, articleHref)
+		log.Printf("Title %d: %s, href: %s\n", i, title, href)
+
+		log.Printf("!!!!")
+		if i > 5 {
+			return
+		}
+		log.Printf("??????")
 
 		ch <- 1
 		go func() {
-			documents[i], _ = goquery.NewDocument(articleHref)
+			log.Printf("WTF")
+			documents[i], _ = goquery.NewDocument(href)
+			log.Printf("WTF")
 			mutex.Lock()
 			{
-				documents[i].Find(".content").Each(func(i int, s *goquery.Selection) {
-					articleTitle := s.Find("h1").Text()
-					s.Find("h1").Remove()
-					articleContent := s.Text()
-					d := esDoc{
-						Title:        articleTitle,
-						Author:       "aaronsw",
-						Content:      articleContent,
-						DayTimeStamp: DAYTIMESTAMP,
-					}
-					{
-						bulkData := elastic.NewBulkIndexRequest().Index("aaronsw").Type(URL + ":content").Id(articleTitle).Doc(d)
-						bulkRequest = bulkRequest.Add(bulkData)
-					}
-				})
+				articleTitle := documents[i].Find("article").Text()
+				log.Printf("articleTitle???%s", articleTitle)
+				log.Printf("WTF")
 			}
 			mutex.Unlock()
 			<-ch
 		}()
 	})
 
-	type metaData struct {
-		Type     string `json:"type"`
-		Title    string `json:"title"`
-		BookDesp string `json:"book_desp"`
-	}
-	m := metaData{
-		Type:     "aaronsw",
-		Title:    "www-aaronsw-com",
-		BookDesp: "RAW THOUGHT by Aaron Swartz",
-	}
-	bulkMetaData := elastic.NewBulkIndexRequest().Index("eebook").Type("metadata").Id(URL).Doc(m)
-	bulkFinalRequest := bulkRequest.Add(bulkMetaData)
-
-	bulkResponse, err := bulkFinalRequest.Do(context.TODO())
-	if err != nil {
-		fmt.Println("err???", err)
-	}
-	fmt.Println("bulkResponse: ", bulkResponse)
 }
