@@ -15,7 +15,7 @@
 package cmd
 
 import (
-	// "context"
+	"context"
 	"fmt"
 	"log"
 	"sync"
@@ -59,7 +59,7 @@ func init() {
 func main() {
 	fmt.Println("ruanyifengeebook running...")
 	URL := viper.GetString("URL")
-	// DAYTIMESTAMP := viper.GetString("DAY_TIME_STAMP")
+	DAYTIMESTAMP := viper.GetString("DAY_TIME_STAMP")
 	viper.SetDefault("ROUTINE_NUM", 10)
 	ROUTINENUM := viper.GetInt("ROUTINE_NUM")
 	var (
@@ -74,7 +74,7 @@ func main() {
 		panic(err)
 	}
 	defer esClient.Stop()
-	_ = esClient.Bulk()
+	bulkRequest := esClient.Bulk()
 
 	type esDoc struct {
 		Title        string `json:"title"`
@@ -97,26 +97,51 @@ func main() {
 		href, _ := s.Find("a").Attr("href")
 		log.Printf("Title %d: %s, href: %s\n", i, title, href)
 
-		log.Printf("!!!!")
-		if i > 5 {
-			return
-		}
-		log.Printf("??????")
+		// if i > 2 {
+			// return
+		// }
 
 		ch <- 1
 		go func() {
-			log.Printf("WTF")
 			documents[i], _ = goquery.NewDocument(href)
-			log.Printf("WTF")
 			mutex.Lock()
 			{
-				articleTitle := documents[i].Find("article").Text()
-				log.Printf("articleTitle???%s", articleTitle)
-				log.Printf("WTF")
+				article := documents[i].Find("article")
+				articleTitle := article.Find("h1").Text()
+				article.Find("h1").Remove()
+				articleContent := article.Text()
+				d := esDoc{
+					Title:        articleTitle,
+					Author:       "ruanyifeng",
+					Content:      articleContent,
+					DayTimeStamp: DAYTIMESTAMP,
+				}
+				{
+					bulkData := elastic.NewBulkIndexRequest().Index("ruanyifeng").Type(URL + ":content").Id(articleTitle).Doc(d)
+					bulkRequest = bulkRequest.Add(bulkData)
+				}
 			}
 			mutex.Unlock()
 			<-ch
 		}()
 	})
 
+	type metaData struct {
+		Type     string `json:"type"`
+		Title    string `json:"title"`
+		BookDesp string `json:"book_desp"`
+	}
+	m := metaData{
+		Type:     "ruanyifeng",
+		Title:    "www-ruanyifeng-com",
+		BookDesp: "阮一峰的网络日志",
+	}
+	bulkMetaData := elastic.NewBulkIndexRequest().Index("eebook").Type("metadata").Id(URL).Doc(m)
+	bulkFinalRequest := bulkRequest.Add(bulkMetaData)
+
+	bulkResponse, err := bulkFinalRequest.Do(context.TODO())
+	if err != nil {
+		fmt.Println("err???", err)
+	}
+	fmt.Println("bulkResponse: ", bulkResponse)
 }
