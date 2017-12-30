@@ -80,6 +80,7 @@ func main() {
 		Title        string `json:"title"`
 		Author       string `json:"author"`
 		Content      string `json:"content"`
+		URL string `json:"url"`
 		DayTimeStamp string `json:"dayTimestamp"`
 	}
 
@@ -92,13 +93,13 @@ func main() {
 
 	ch := make(chan int, maxRoutineNum)
 	documents := make([]*goquery.Document, 500)
-	doc.Find(".module-list-item").Each(func(i int, s *goquery.Selection) {
+	doc.Find("#alpha .module-list-item").Each(func(i int, s *goquery.Selection) {
 		title := s.Find("a").Text()
 		href, _ := s.Find("a").Attr("href")
 		log.Printf("Title %d: %s, href: %s\n", i, title, href)
 
 		// if i > 2 {
-			// return
+		// return
 		// }
 
 		ch <- 1
@@ -109,11 +110,15 @@ func main() {
 				article := documents[i].Find("article")
 				articleTitle := article.Find("h1").Text()
 				article.Find("h1").Remove()
-				articleContent := article.Text()
+				article.Find(".entry-sponsor").Remove()
+				article.Find(".asset-meta").Remove()
+				article.Find("#share_button").Remove()
+				articleContent, _ := article.Html()
 				d := esDoc{
 					Title:        articleTitle,
 					Author:       "ruanyifeng",
 					Content:      articleContent,
+					URL: href,
 					DayTimeStamp: DAYTIMESTAMP,
 				}
 				{
