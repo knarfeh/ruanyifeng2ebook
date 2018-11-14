@@ -57,7 +57,7 @@ func init() {
 }
 
 func main() {
-	fmt.Println("ruanyifengeebook running...")
+	fmt.Println("ruanyifeng2ebook running...")
 	URL := viper.GetString("URL")
 	DAYTIMESTAMP := viper.GetString("DAY_TIME_STAMP")
 	viper.SetDefault("ROUTINE_NUM", 10)
@@ -80,7 +80,7 @@ func main() {
 		Title        string `json:"title"`
 		Author       string `json:"author"`
 		Content      string `json:"content"`
-		URL string `json:"url"`
+		URL          string `json:"url"`
 		DayTimeStamp string `json:"dayTimestamp"`
 	}
 
@@ -89,7 +89,6 @@ func main() {
 		fmt.Println("Network issues...")
 		log.Fatal(err)
 	}
-	fmt.Println("doc???", doc)
 
 	ch := make(chan int, maxRoutineNum)
 	documents := make([]*goquery.Document, 500)
@@ -97,10 +96,6 @@ func main() {
 		title := s.Find("a").Text()
 		href, _ := s.Find("a").Attr("href")
 		log.Printf("Title %d: %s, href: %s\n", i, title, href)
-
-		// if i > 2 {
-		// return
-		// }
 
 		ch <- 1
 		go func() {
@@ -118,7 +113,7 @@ func main() {
 					Title:        articleTitle,
 					Author:       "ruanyifeng",
 					Content:      articleContent,
-					URL: href,
+					URL:          href,
 					DayTimeStamp: DAYTIMESTAMP,
 				}
 				{
@@ -143,10 +138,8 @@ func main() {
 	}
 	bulkMetaData := elastic.NewBulkIndexRequest().Index("eebook").Type("metadata").Id(URL).Doc(m)
 	bulkFinalRequest := bulkRequest.Add(bulkMetaData)
-
-	bulkResponse, err := bulkFinalRequest.Do(context.TODO())
+	_, err = bulkFinalRequest.Do(context.TODO())
 	if err != nil {
 		fmt.Println("err???", err)
 	}
-	fmt.Println("bulkResponse: ", bulkResponse)
 }

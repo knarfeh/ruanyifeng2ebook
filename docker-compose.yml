@@ -1,7 +1,7 @@
 version: '2'
 services:
-  ruanyifengeebook:
-    image: knarfeh/ruanyifengeebook
+  ruanyifeng2ebook:
+    image: knarfeh/ruanyifeng2ebook
     build:
       context: .
       dockerfile: ./.docker/dev/Dockerfile
@@ -9,7 +9,7 @@ services:
     command: ["go", "run", "main.go", "fetch"]
     tty: true
     volumes:
-      - .:/go/src/github.com/ee-book/ruanyifengeebook/
+      - .:/go/src/github.com/knarfeh/ruanyifeng2ebook/
     environment:
       - URL=http://www.ruanyifeng.com/blog/computer/
       - DAY_TIME_STAMP=2017-12-29

@@ -14,7 +14,7 @@
 
 package main
 
-import "github.com/ee-book/ruanyifengeebook/cmd"
+import "github.com/knarfeh/ruanyifeng2ebook/cmd"
 
 func main() {
 	cmd.Execute()
